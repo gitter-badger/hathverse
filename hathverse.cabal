@@ -34,6 +34,7 @@ library
         , strict
         , aeson
         , async
+        , pwstore-purehaskell
     extensions:
       OverloadedStrings
 
@@ -52,6 +53,8 @@ executable hathverse
         , hathverse
         , wai-middleware-static
         , wai-extra
+        , pwstore-purehaskell
+        , text
 
 source-repository head
     type:     git

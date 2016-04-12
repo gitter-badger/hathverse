@@ -13,9 +13,10 @@ module Hathverse.Db (
 , Problem(..)
 , allProblemIdTitles
 , getProblemById
+, addUser
 ) where
 
-import Data.Text (Text)
+import Data.Text (Text,pack)
 import Data.Int (Int64)
 import Control.Arrow
 import Database.Persist.TH
@@ -25,6 +26,7 @@ import Control.Monad.Logger
 import Control.Monad.Trans.Resource (runResourceT)
 import Database.Esqueleto
 import Data.Pool (Pool)
+
 
 -- | Initilize PostgreSQL database:
 -- > initdb --locale en_US.UTF-8 -E UTF8 -D '/usr/local/var/postgres'
@@ -42,8 +44,8 @@ Problem
 User
     name        Text
     fullname    Text
-    seed        Text
     password    Text
+    Primary     name
     deriving    Show
 |]
 
@@ -80,3 +82,8 @@ getProblemById problemId = runDb $ do
   case problems of
     [problem] -> return . Just . entityVal $ problem
     _ -> return Nothing
+
+addUser::Text -> Text ->Text ->Query (Key User)
+addUser username fullname hashPassword = runDb $ do
+    uid <- insert $ User username fullname hashPassword
+    return uid

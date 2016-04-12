@@ -10,6 +10,9 @@ import Network.Wai.Middleware.Static
 import Network.Wai.Middleware.RequestLogger
 import qualified Hathverse.Db as Db
 import Hathverse.Controller
+import Data.Text.Encoding (decodeUtf8,encodeUtf8)
+import Crypto.PasswordStore
+
 
 
 main :: IO ()
@@ -37,8 +40,13 @@ app = do
     get "/signup" $ liftIO  (return signupPage) >>= html
 
     post "/signup" $ do
-        j <- param "username"
-        liftIO  (return $ signupResultPage j) >>= html
+        u <- param "username"
+        f <- param "fullname"
+        p <- param "password"
+        salt <- liftIO genSaltIO
+        let password =  decodeUtf8 $ makePasswordSalt (encodeUtf8 p) salt 17
+        userid <- liftIO $ runQuery pool $ Db.addUser u f password
+        liftIO  (return $ signupResultPage $ show userid) >>= html
 
     post "/check" $
        json =<< runQuery' . checkApi =<< jsonBody'
