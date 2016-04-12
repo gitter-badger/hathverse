@@ -34,7 +34,14 @@ app = do
     get ("problems" <//> var) $ \pid ->
       lucid =<< runQuery' (problemPage pid)
 
-    post "check" $
-      json =<< runQuery' . checkApi =<< jsonBody'
+    get "/signup" $ liftIO  (return signupPage) >>= html
+
+    post "/signup" $ do
+        j <- param "username"
+        liftIO  (return $ signupResultPage j) >>= html
+
+    post "/check" $
+       json =<< runQuery' . checkApi =<< jsonBody'
+
 
   where runQuery' action = runQuery $ \conn -> liftIO (runReaderT action conn)

@@ -39,6 +39,12 @@ Problem
     moduleName   Text
     checkProgram Text
     deriving     Show
+User
+    name        Text
+    fullname    Text
+    seed        Text
+    password    Text
+    deriving    Show
 |]
 
 connStr :: ConnectionString
