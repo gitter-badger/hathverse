@@ -6,6 +6,7 @@ import Control.Monad.Reader
 import System.Environment (lookupEnv)
 import Web.Spock.Safe
 import Web.Spock.Lucid
+import Data.Text.Lazy (toStrict)
 import Network.Wai.Middleware.Static
 import Network.Wai.Middleware.RequestLogger
 import qualified Hathverse.Db as Db
@@ -35,25 +36,25 @@ app = do
     get root $ requireUser $ \user ->
       lucid =<< runQuery' homepage
 
-    get ("problems" <//> var) $ \pid -> requireUser $ \user
+    get ("problems" <//> var) $ \pid -> requireUser $ \user ->
       lucid =<< runQuery' (problemPage pid)
 
-    get "/login" $ do
-        html . toStrict  $ loginPage  "Please login"
+    get "/login" $
+      lucid  $ loginPage  "Please login"
 
     post "/login" $ do
         u <- param' "username"
         p <- param' "password"
         users <-  runQuery' $ Db.getUserByUsername u
         case users of
-            Nothing -> html .  toStrict $ loginPage "The user don't exist"
+            Nothing -> lucid $ loginPage "The user don't exist"
             Just user -> case (verifyPassword (encodeUtf8 p) $ encodeUtf8 (Db.userPassword user)) of
                 True -> do
                     writeSession  $ Just user
                     redirect "/"
-                False -> html . toStrict $  loginPage "The password is wrong "
+                False -> lucid $  loginPage "The password is wrong "
 
-    get "/signup" $ html . toStrict $ signupPage
+    get "/signup" $ lucid $ signupPage
 
     post "/signup" $ do
         u <- param' "username"
@@ -62,18 +63,11 @@ app = do
         salt <- liftIO genSaltIO
         let password =  decodeUtf8 $ makePasswordSalt (encodeUtf8 p) salt 17
         userid <- runQuery' $ Db.addUser u f password
-        html . toStrict $ signupResultPage $ show userid
+        lucid $ signupResultPage $ show userid
 
-<<<<<<< c36362952be762f3eaa95b55602bfe7dfd3560bc
-    post "/check" $
+
+    post "/check" $ requireUser $ \user ->
        json =<< runQuery' . checkApi =<< jsonBody'
-
-=======
-    post "/check" $ requireUser $ \user -> do
-      j <- jsonBody'
-      reply <- runQuery' $ checkApi j
-      json reply
->>>>>>> add session
 
   where runQuery' action = runQuery $ \conn -> liftIO (runReaderT action conn)
 
