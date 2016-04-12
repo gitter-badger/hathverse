@@ -11,10 +11,11 @@ module Hathverse.Db (
   runConnPool
 , Query
 , Problem(..)
+, User(..)
 , allProblemIdTitles
 , getProblemById
 , addUser
-, getPasswordByUsername
+, getUserByUsername
 ) where
 
 import Data.Text (Text,pack)
@@ -84,15 +85,15 @@ getProblemById problemId = runDb $ do
     [problem] -> return . Just . entityVal $ problem
     _ -> return Nothing
 
-getPasswordByUsername::Text -> Query (Maybe Text)
-getPasswordByUsername username = runDb $ do
+getUserByUsername::Text -> Query (Maybe User)
+getUserByUsername username = runDb $ do
     users <- select $
         from $ \user -> do
             where_ (user ^. UserName ==.  val username)
             limit 1
-            return (user ^. UserPassword)
+            return user
     case users of
-        [user] -> return $ Just . unValue $ user
+        [user] -> return $ Just . entityVal $ user
         _ -> return Nothing
 
 addUser::Text -> Text ->Text ->Query (Key User)

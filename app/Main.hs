@@ -18,36 +18,39 @@ import Crypto.PasswordStore
 main :: IO ()
 main = Db.runConnPool $ \pool -> do
 
-  let sessionCfg = (defaultSessionCfg ()) { sc_cookieName = "hathverse" }
+  let sessionCfg =  Nothing  -- { sc_cookieName = "hathverse" }
       appCfg = defaultSpockCfg sessionCfg (PCPool pool) ()
 
   port <- maybe 3000 read <$> lookupEnv "PORT"
   runSpock port $ spock appCfg app
 
 
-app :: SpockM _ ses state ()
+app :: SpockM _  (Maybe Db.User) state ()
 app = do
 
     middleware logStdoutDev
     middleware $ staticPolicy $ addBase "static"
 
-    get root $
+
+    get root $ requireUser $ \user ->
       lucid =<< runQuery' homepage
 
-    get ("problems" <//> var) $ \pid ->
+    get ("problems" <//> var) $ \pid -> requireUser $ \user
       lucid =<< runQuery' (problemPage pid)
 
-    get "/login" $  do
+    get "/login" $ do
         html . toStrict  $ loginPage  "Please login"
 
     post "/login" $ do
         u <- param' "username"
         p <- param' "password"
-        dbpassowrd <-  runQuery' $ Db.getPasswordByUsername u
-        case dbpassowrd of
+        users <-  runQuery' $ Db.getUserByUsername u
+        case users of
             Nothing -> html .  toStrict $ loginPage "The user don't exist"
-            Just password -> case (verifyPassword (encodeUtf8 p) $ encodeUtf8 password) of
-                True -> html . toStrict $ loginPage " Pass login "
+            Just user -> case (verifyPassword (encodeUtf8 p) $ encodeUtf8 (Db.userPassword user)) of
+                True -> do
+                    writeSession  $ Just user
+                    redirect "/"
                 False -> html . toStrict $  loginPage "The password is wrong "
 
     get "/signup" $ html . toStrict $ signupPage
@@ -61,11 +64,22 @@ app = do
         userid <- runQuery' $ Db.addUser u f password
         html . toStrict $ signupResultPage $ show userid
 
+<<<<<<< c36362952be762f3eaa95b55602bfe7dfd3560bc
     post "/check" $
        json =<< runQuery' . checkApi =<< jsonBody'
 
+=======
+    post "/check" $ requireUser $ \user -> do
+      j <- jsonBody'
+      reply <- runQuery' $ checkApi j
+      json reply
+>>>>>>> add session
 
   where runQuery' action = runQuery $ \conn -> liftIO (runReaderT action conn)
 
---pleaseLogin::Data.Text.Internal.Lazy.Text
--- pleaseLogin =  html . toStrict  $ loginPage  "Please login"
+
+requireUser action = do
+    sess <- readSession
+    case sess of
+        Nothing -> redirect "/login"
+        Just user -> action user
