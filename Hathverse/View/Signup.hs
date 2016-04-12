@@ -6,7 +6,6 @@ import Data.Int (Int64)
 import Data.Monoid ((<>))
 import qualified Data.Text as T
 import Hathverse.View.Common
-import Hathverse.Db (Problem(..),addUser,runQuery)
 import Lucid
 
 

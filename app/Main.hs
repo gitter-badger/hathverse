@@ -37,31 +37,35 @@ app = do
     get ("problems" <//> var) $ \pid ->
       lucid =<< runQuery' (problemPage pid)
 
-    get "/login" $ liftIO  (return $ loginPage  "Please login") >>= html
+    get "/login" $  do
+        html . toStrict  $ loginPage  "Please login"
 
     post "/login" $ do
-        u <- param "username"
-        p <- param "password"
-        dbpassowrd <- liftIO $ runQuery pool $ Db.getPasswordByUsername u
+        u <- param' "username"
+        p <- param' "password"
+        dbpassowrd <-  runQuery' $ Db.getPasswordByUsername u
         case dbpassowrd of
-            Nothing ->  liftIO  (return $ loginPage "The user don't exist") >>= html
-            Just password -> case (verifyPassword p $ encodeUtf8 password) of
-                True -> liftIO  (return $ loginPage " pass login ") >>= html
-                False -> liftIO  (return $ loginPage "The password is wrong ") >>= html
+            Nothing -> html .  toStrict $ loginPage "The user don't exist"
+            Just password -> case (verifyPassword (encodeUtf8 p) $ encodeUtf8 password) of
+                True -> html . toStrict $ loginPage " Pass login "
+                False -> html . toStrict $  loginPage "The password is wrong "
 
-    get "/signup" $ liftIO  (return signupPage) >>= html
+    get "/signup" $ html . toStrict $ signupPage
 
     post "/signup" $ do
-        u <- param "username"
-        f <- param "fullname"
-        p <- param "password"
+        u <- param' "username"
+        f <- param' "fullname"
+        p <- param' "password"
         salt <- liftIO genSaltIO
         let password =  decodeUtf8 $ makePasswordSalt (encodeUtf8 p) salt 17
-        userid <- liftIO $ runQuery pool $ Db.addUser u f password
-        liftIO  (return $ signupResultPage $ show userid) >>= html
+        userid <- runQuery' $ Db.addUser u f password
+        html . toStrict $ signupResultPage $ show userid
 
     post "/check" $
        json =<< runQuery' . checkApi =<< jsonBody'
 
 
   where runQuery' action = runQuery $ \conn -> liftIO (runReaderT action conn)
+
+--pleaseLogin::Data.Text.Internal.Lazy.Text
+-- pleaseLogin =  html . toStrict  $ loginPage  "Please login"
