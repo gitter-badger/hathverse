@@ -32,4 +32,4 @@ signupView = withTitleBody "signup" $ do
                 td_ $ input_ [type_ "password", name_ "password2",maxlength_ "20"]
             tr_ $ do
                 td_ ""
-                td_ $ input_ [type_ "submit", value_ "Submit"]
+                td_ $ input_ [type_ "submit", value_ "signup"]
