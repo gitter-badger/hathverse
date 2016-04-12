@@ -14,6 +14,7 @@ module Hathverse.Db (
 , allProblemIdTitles
 , getProblemById
 , addUser
+, getPasswordByUsername
 ) where
 
 import Data.Text (Text,pack)
@@ -82,6 +83,17 @@ getProblemById problemId = runDb $ do
   case problems of
     [problem] -> return . Just . entityVal $ problem
     _ -> return Nothing
+
+getPasswordByUsername::Text -> Query (Maybe Text)
+getPasswordByUsername username = runDb $ do
+    users <- select $
+        from $ \user -> do
+            where_ (user ^. UserName ==.  val username)
+            limit 1
+            return (user ^. UserPassword)
+    case users of
+        [user] -> return $ Just . unValue $ user
+        _ -> return Nothing
 
 addUser::Text -> Text ->Text ->Query (Key User)
 addUser username fullname hashPassword = runDb $ do

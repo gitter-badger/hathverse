@@ -22,6 +22,9 @@ signupPage = renderText  signupView
 signupResultPage :: String -> L.Text
 signupResultPage i = renderText $ signupResult  i
 
+loginPage :: String -> L.Text
+loginPage i = renderText $ loginView  i
+
 data CheckRequest = CheckRequest {
     probId :: Int64
   , solCode :: String

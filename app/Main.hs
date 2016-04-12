@@ -37,6 +37,18 @@ app = do
     get ("problems" <//> var) $ \pid ->
       lucid =<< runQuery' (problemPage pid)
 
+    get "/login" $ liftIO  (return $ loginPage  "Please login") >>= html
+
+    post "/login" $ do
+        u <- param "username"
+        p <- param "password"
+        dbpassowrd <- liftIO $ runQuery pool $ Db.getPasswordByUsername u
+        case dbpassowrd of
+            Nothing ->  liftIO  (return $ loginPage "The user don't exist") >>= html
+            Just password -> case (verifyPassword p $ encodeUtf8 password) of
+                True -> liftIO  (return $ loginPage " pass login ") >>= html
+                False -> liftIO  (return $ loginPage "The password is wrong ") >>= html
+
     get "/signup" $ liftIO  (return signupPage) >>= html
 
     post "/signup" $ do

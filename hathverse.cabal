@@ -12,6 +12,7 @@ library
         , Hathverse.View.Homepage
         , Hathverse.View.Problem
         , Hathverse.View.Signup
+        , Hathverse.View.Login
         , Hathverse.Controller
         , Hathverse.Checker
     -- other-modules:
