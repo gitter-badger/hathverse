@@ -61,15 +61,14 @@ runConnPool action =
     action pool
 
 data Env = Env {
-    sqlHandle :: SqlBackend
+    sqlHandler :: SqlBackend
   , currUser :: Maybe User
   }
 
--- type ConnPool = Pool SqlBackend
 type Query a = ReaderT Env IO a
 
 runDb :: SqlPersistM a -> Query a
-runDb query = asks sqlHandle >>= lift . runSqlPersistM query
+runDb query = asks sqlHandler >>= lift . runSqlPersistM query
 
 allProblemIdTitles :: Query [(Int64, Text)]
 allProblemIdTitles = runDb $ do

@@ -5,12 +5,12 @@ module Main (main) where
 import Control.Monad.Reader
 import System.Environment (lookupEnv)
 import Web.Spock.Safe
-import Web.Spock.Lucid
+-- import Web.Spock.Lucid
 import Network.Wai.Middleware.Static
 import Network.Wai.Middleware.RequestLogger
 import Hathverse.Db
 import Hathverse.Controller
-import Data.Text.Encoding (decodeUtf8,encodeUtf8)
+import Data.Text.Encoding (decodeUtf8, encodeUtf8)
 import Crypto.PasswordStore
 
 
@@ -30,30 +30,30 @@ app = do
     middleware logStdoutDev
     middleware $ staticPolicy $ addBase "static"
 
-    get root $
-      lucid =<< runQuery' homepage
+    get root $ lazyBytes =<< runQuery' homepage
 
     get ("problems" <//> var) $ \pid ->
-      lucid =<< runQuery' (problemPage pid)
+      lazyBytes =<< runQuery' (problemPage pid)
 
     get "/login" $
-      lucid  $ loginPage "Please login"
+      lazyBytes =<< runQuery' (loginPage "Please login")
 
     post "/login" $ do
         u <- param' "username"
         p <- param' "password"
         users <-  runQuery' $ getUserByUsername u
         case users of
-            Nothing -> lucid $ loginPage "The user don't exist"
+            Nothing ->
+              lazyBytes =<< runQuery' (loginPage "The user don't exist")
             Just user ->
               if verifyPassword (encodeUtf8 p) $ encodeUtf8 (userPassword user)
                 then do
                   writeSession  $ Just user
                   redirect "/"
                 else
-                  lucid $ loginPage "The password is wrong "
+                  lazyBytes =<< runQuery' (loginPage "The password is wrong ")
 
-    get "/signup" $ lucid signupPage
+    get "/signup" $ lazyBytes =<< runQuery' signupPage
 
     post "/signup" $ do
         u <- param' "username"
@@ -62,10 +62,10 @@ app = do
         salt <- liftIO genSaltIO
         let password =  decodeUtf8 $ makePasswordSalt (encodeUtf8 p) salt 17
         userid <- runQuery' $ addUser u f password
-        lucid $ signupResultPage $ show userid
+        lazyBytes =<< runQuery' (signupResultPage $ show userid)
 
-    post "/check" $
-       json =<< runQuery' . checkApi =<< jsonBody'
+    -- post "/check" $
+    --    json =<< runQuery' . checkApi =<< jsonBody'
 
 runQuery' action = do
   sess <- readSession

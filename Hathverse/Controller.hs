@@ -3,27 +3,38 @@ module Hathverse.Controller where
 
 import GHC.Generics (Generic)
 import Data.Int (Int64)
+import Data.ByteString.Lazy (ByteString)
 import Data.Aeson
 import Control.Monad.Reader
 import Lucid
 import Hathverse.Db
 import Hathverse.View
+import Hathverse.View.Common
 import Hathverse.Checker
 
-homepage :: Query (Html ())
-homepage = homepageView <$> allProblemIdTitles
+runHtml :: HtmlGen -> Query ByteString
+runHtml action = do
+  maybeUser <- asks currUser
+  return . flip runReader maybeUser $ renderBST action
 
-problemPage :: Int64 -> Query (Html ())
-problemPage pid = problemView pid <$> getProblemById pid
+homepage :: Query ByteString
+homepage = do
+  pidTitles <- allProblemIdTitles
+  runHtml $ homepageView pidTitles
 
-signupPage :: Html ()
-signupPage =  signupView
+problemPage :: Int64 -> Query ByteString
+problemPage pid = do
+  prob <- getProblemById pid
+  runHtml $ problemView pid prob
 
-signupResultPage :: String -> Html ()
-signupResultPage i = signupResult  i
+loginPage :: String -> Query ByteString
+loginPage s = runHtml $ loginView s
 
-loginPage :: String -> Html ()
-loginPage i = loginView  i
+signupPage :: Query ByteString
+signupPage = runHtml signupView
+
+signupResultPage :: String -> Query ByteString
+signupResultPage s = runHtml $ signupResult s
 
 data CheckRequest = CheckRequest {
     probId :: Int64
@@ -44,3 +55,4 @@ checkApi (CheckRequest pid code) = do
   case prob of
     Nothing -> return $ CheckResult "Problem not found."
     Just problem -> lift $ CheckResult <$> check problem code
+

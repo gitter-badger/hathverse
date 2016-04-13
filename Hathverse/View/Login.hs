@@ -1,16 +1,10 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards #-}
 module Hathverse.View.Login where
 
-import Data.Int (Int64)
-import Data.Monoid ((<>))
-import qualified Data.Text as T
 import Hathverse.View.Common
-import Hathverse.Db ()
 import Lucid
 
-
-loginView :: String ->  Html ()
+loginView :: String ->  HtmlGen
 loginView inString = withTitleBody "login" $ do
         form_ [action_ "/login", method_ "post" , name_ "loginform"] $ do
         table_ [class_ "table table-bordered table-hover"] $ do
