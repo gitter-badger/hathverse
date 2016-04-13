@@ -46,7 +46,6 @@ Problem
 User
     name        Text
     UniqueName  name
-    fullname    Text
     password    Text
     deriving    Show
 |]
@@ -100,6 +99,6 @@ getUserByUsername username = runDb $ do
     [user] -> return . Just . entityVal $ user
     _ -> return Nothing
 
-addUser :: Text -> Text -> Text -> Query (Key User)
-addUser username fullname hashPassword =
-  runDb . insert $ User username fullname hashPassword
+addUser :: Text -> Text -> Query (Key User)
+addUser username hashPassword =
+  runDb . insert $ User username hashPassword

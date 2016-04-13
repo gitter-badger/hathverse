@@ -27,14 +27,8 @@ problemPage pid = do
   prob <- getProblemById pid
   runHtml $ problemView pid prob
 
-loginPage :: String -> Query ByteString
-loginPage s = runHtml $ loginView s
-
-signupPage :: Query ByteString
-signupPage = runHtml signupView
-
-signupResultPage :: String -> Query ByteString
-signupResultPage s = runHtml $ signupResult s
+loginPage :: Query ByteString
+loginPage = runHtml loginView
 
 data CheckRequest = CheckRequest {
     probId :: Int64

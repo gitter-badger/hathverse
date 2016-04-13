@@ -30,13 +30,16 @@ navigation =
   nav_ [class_ "navbar navbar-dark navbar-static-top"] $
     div_ [class_ "container"] $ do
       a_ [class_ "navbar-brand", href_ "/"] "Hathverse"
-      ul_ [class_ "nav navbar-nav"] $
-        li_ [class_ "nav-item", style_ "float: right"] $ do
-          maybeUser <- lift ask
-          case maybeUser of
-            Just user ->
+      ul_ [class_ "nav navbar-nav", style_ "float: right"] $ do
+        maybeUser <- lift ask
+        case maybeUser of
+          Just user -> do
+            li_ [class_ "nav-item"] $
               a_ [class_ "nav-link", href_ "#"] $ toHtml $ userName user
-            Nothing ->
+            li_ [class_ "nav-item"] $
+              a_ [class_ "nav-link", href_ "/logout"] "logout"
+          Nothing ->
+            li_ [class_ "nav-item"] $
               a_ [class_ "nav-link", href_ "/login"] "login"
 
 withTitleBody :: HtmlGen -> HtmlGen -> HtmlGen

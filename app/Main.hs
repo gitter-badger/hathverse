@@ -12,7 +12,7 @@ import Hathverse.Db
 import Hathverse.Controller
 import Data.Text.Encoding (decodeUtf8, encodeUtf8)
 import Crypto.PasswordStore
-
+import Data.Map
 
 main :: IO ()
 main = runConnPool $ \pool -> do
@@ -36,36 +36,43 @@ app = do
       lazyBytes =<< runQuery' (problemPage pid)
 
     get "/login" $
-      lazyBytes =<< runQuery' (loginPage "Please login")
+      lazyBytes =<< runQuery' loginPage
 
     post "/login" $ do
-        u <- param' "username"
-        p <- param' "password"
-        users <-  runQuery' $ getUserByUsername u
-        case users of
-            Nothing ->
-              lazyBytes =<< runQuery' (loginPage "The user don't exist")
-            Just user ->
-              if verifyPassword (encodeUtf8 p) $ encodeUtf8 (userPassword user)
-                then do
-                  writeSession  $ Just user
-                  redirect "/"
-                else
-                  lazyBytes =<< runQuery' (loginPage "The password is wrong ")
+      username <- param' "username"
+      password <- param' "password"
+      _type <- param' "type"
+      maybeUser <- runQuery' $ getUserByUsername username
+      (ok, err) <-
+        case _type :: String of
+          "login" ->
+            case maybeUser of
+              Nothing -> return (False, "User not found.")
+              Just user ->
+                if verifyPassword (encodeUtf8 password) $ encodeUtf8 (userPassword user)
+                  then do
+                    writeSession $ Just user
+                    return (True, "success")
+                  else return (False, "Wrong password.")
+          "signup" ->
+            case maybeUser of
+              Just _ -> return (False, "Username is already used.")
+              Nothing -> do
+                salt <- liftIO genSaltIO
+                let hashPassword =  decodeUtf8 $ makePasswordSalt (encodeUtf8 password) salt 17
+                userid <- runQuery' $ addUser username hashPassword
+                writeSession =<< runQuery' (getUserByUsername username)
+                return (True, show userid)
+          _ -> return (False, "?")
 
-    get "/signup" $ lazyBytes =<< runQuery' signupPage
+      json (fromList [("ok" :: String, show ok), ("err", err)])
 
-    post "/signup" $ do
-        u <- param' "username"
-        f <- param' "fullname"
-        p <- param' "password"
-        salt <- liftIO genSaltIO
-        let password =  decodeUtf8 $ makePasswordSalt (encodeUtf8 p) salt 17
-        userid <- runQuery' $ addUser u f password
-        lazyBytes =<< runQuery' (signupResultPage $ show userid)
+    get "/logout" $ do
+      writeSession Nothing
+      redirect "/login"
 
-    -- post "/check" $
-    --    json =<< runQuery' . checkApi =<< jsonBody'
+    post "/check" $
+      json =<< runQuery' . checkApi =<< jsonBody'
 
 runQuery' action = do
   sess <- readSession

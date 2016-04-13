@@ -48,12 +48,13 @@ executable hathverse
           base
         , text
         , mtl
+        , containers
         , Spock
         , Spock-lucid
         , hathverse
         , wai-middleware-static
         , wai-extra
-        , pwstore-purehaskell
+        , pwstore-fast
         , text
 
 source-repository head
