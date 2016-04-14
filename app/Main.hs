@@ -10,9 +10,6 @@ import Network.Wai.Middleware.Static
 import Network.Wai.Middleware.RequestLogger
 import Hathverse.Db
 import Hathverse.Controller
-import Data.Text.Encoding (decodeUtf8, encodeUtf8)
-import Crypto.PasswordStore
-import Data.Map
 
 main :: IO ()
 main = runConnPool $ \pool -> do
@@ -35,43 +32,25 @@ app = do
     get ("problems" <//> var) $ \pid ->
       lazyBytes =<< runQuery' (problemPage pid)
 
-    get "/login" $
-      lazyBytes =<< runQuery' loginPage
+    get "login" $ do
+      sess <- readSession
+      case sess of
+        Just _ -> redirect "/"
+        Nothing -> lazyBytes =<< runQuery' loginPage
 
-    post "/login" $ do
+    post "login" $ do
       username <- param' "username"
       password <- param' "password"
       _type <- param' "type"
-      maybeUser <- runQuery' $ getUserByUsername username
-      (ok, err) <-
-        case _type :: String of
-          "login" ->
-            case maybeUser of
-              Nothing -> return (False, "User not found.")
-              Just user ->
-                if verifyPassword (encodeUtf8 password) $ encodeUtf8 (userPassword user)
-                  then do
-                    writeSession $ Just user
-                    return (True, "success")
-                  else return (False, "Wrong password.")
-          "signup" ->
-            case maybeUser of
-              Just _ -> return (False, "Username is already used.")
-              Nothing -> do
-                salt <- liftIO genSaltIO
-                let hashPassword =  decodeUtf8 $ makePasswordSalt (encodeUtf8 password) salt 17
-                userid <- runQuery' $ addUser username hashPassword
-                writeSession =<< runQuery' (getUserByUsername username)
-                return (True, show userid)
-          _ -> return (False, "?")
+      (j, sess) <- runQuery' $ loginSignupPost username password _type
+      writeSession sess
+      json j
 
-      json (fromList [("ok" :: String, show ok), ("err", err)])
-
-    get "/logout" $ do
+    get "logout" $ do
       writeSession Nothing
-      redirect "/login"
+      redirect "login"
 
-    post "/check" $
+    post "check" $
       json =<< runQuery' . checkApi =<< jsonBody'
 
 runQuery' action = do

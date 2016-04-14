@@ -1,5 +1,5 @@
 name:          hathverse
-version:       0.0.3
+version:       0.0.4
 cabal-version: >= 1.8
 build-type:    Simple
 
@@ -34,7 +34,7 @@ library
         , strict
         , aeson
         , async
-        , pwstore-purehaskell
+        , pwstore-fast
     extensions:
       OverloadedStrings
 
@@ -48,14 +48,11 @@ executable hathverse
           base
         , text
         , mtl
-        , containers
         , Spock
         , Spock-lucid
         , hathverse
         , wai-middleware-static
         , wai-extra
-        , pwstore-fast
-        , text
 
 source-repository head
     type:     git

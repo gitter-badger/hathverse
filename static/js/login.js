@@ -6,7 +6,7 @@ function callback(type){
                    "password": $("#password").val(),
                    "type": type},
             success: function(data){
-              if(data.ok == "True"){
+              if(data.ok){
                 window.location.href = "/";
               } else {
                 $("#err-msg").html(data.err);
